@@ -74,72 +74,6 @@ void WritetextToFile(char** document, u_int16_t currentLine) {
 }
 
 
-// void ReadteaxtFromfile(char** document,u_int16_t* currentLine) {
-//     FILE* file;
-//     char mystring[1000];
-//     file = fopen("..//myfile.txt", "r");
-//     if (file == NULL)
-//     {
-//         printf("Error opening file");
-//     }
-//     else
-//     {
-//         while (fgets(mystring, 100, file) != NULL){
-//             printf("%s", mystring);
-//             // AddTextToEnd(document,*currentLine);
-//             document[*currentLine]=mystring;
-//             printf("\n");
-//         }
-//         fclose(file);
-//     }
-// }
-
-
-
-// void ReadteaxtFromfile(char** document, u_int16_t* currentLine) {
-//     FILE* file;
-//     char mystring[1000];
-//     file = fopen("..//myfile.txt", "r");
-//     if (file == NULL) {
-//         printf("Error opening file");
-//         return;
-//     }
-//     // *currentLine = 0;
-//     startFromNewLine(document, currentLine);
-//
-//     while (fgets(mystring, sizeof(mystring), file) != NULL) {
-//         // Strip the trailing newline that fgets keeps
-//         size_t len = strlen(mystring);
-//         if (len > 0 && mystring[len - 1] == '\n') {
-//             mystring[len - 1] = '\0';
-//             len--;
-//         }
-//
-//         // Allocate a proper heap copy and assign to current line
-//         char* lineCopy = malloc(len + 1);
-//         if (lineCopy == NULL) {
-//             printf("Out of memory\n");
-//             break;
-//         }
-//         strcpy(lineCopy, mystring);
-//         document[*currentLine] = lineCopy;
-//
-//         // Move to the next line for the next iteration (but not past EOF)
-//         if (!feof(file)) {
-//             startFromNewLine(document, currentLine);
-//         }
-//     }
-//
-//     fclose(file);
-//
-//     // Print loaded content
-//     printf("Loaded from file:\n");
-//     for (uint16_t i = 1; i < *currentLine + 1; i++) {
-//         printf("%d. %s\n", i, document[i]);
-//     }
-// }
-
-
 
 int main(void){
 
@@ -195,8 +129,9 @@ int main(void){
                 repeat=1;
                 continue;
             case '4':
-                printf("Command 4 is to use files to load\n\n");
-                // ReadteaxtFromfile(document,&currentLine);
+                printf("Command 4 is to use files to load is not implimenting\n\n");
+
+                // ReadTextFromFile(document, &currentLine, &size, &document);
                 repeat=1;
                 continue;
             case '5':
@@ -217,35 +152,40 @@ int main(void){
                 printf("Choose line and index: ");
                 scanf("%d %d", &line, &index);
                 getchar();
+                if (line >= 1 && line <= currentLine && index <= strlen(document[line])) {
+                    u_int16_t activeLine=0;
+                    startFromNewLine(documentTemplate,&activeLine);
+                    char* result =AddTextToEnd(documentTemplate,activeLine);
+                    printf("Preparing to insert '%s' into line %d at index %d...\n\n", result, line, index);
+                    result[strlen(result)]=' ';
 
-                u_int16_t activeLine=0;
-                startFromNewLine(documentTemplate,&activeLine);
-                char* result =AddTextToEnd(documentTemplate,activeLine);
-                printf("Preparing to insert '%s' into line %d at index %d...\n\n", result, line, index);
-                result[strlen(result)]=' ';
+                    int32_t sizeofupdate=strlen(document[line])+strlen(result)+1;
 
-                uint32_t sizeofupdate=sizeof(document[line])+strlen(result)+1;
+                    if (strlen(document[line])+strlen(result)+1>strlen(document[line]) ) {
+                        document[line]=ExtendArray(document[line],&sizeofupdate);
+                    }
 
-                if (strlen(document[line])+strlen(result)+1>sizeof(document[line]) ) {
-                    document[line]=ExtendArray(document[line],&sizeofupdate);
+                    u_int16_t docLen = strlen(document[line]);
+                    u_int16_t wordLen = strlen(result);
+
+                    for (int i = docLen; i >= index; i--) {
+                        document[line][i + wordLen] = document[line][i];
+                    }
+
+                    for (int i = 0; i < wordLen; i++) {
+                        document[line][index + i] = result[i];
+                    }
+
+                    printf("%s",document[line]);
+                    printf("\n");
+                    repeat=1;
+                    free(documentTemplate);
+                    continue;
                 }
+                    printf("Index or line out of range\n\n");
+                    continue;
 
-                u_int16_t docLen = strlen(document[line]);
-                u_int16_t wordLen = strlen(result);
 
-                for (int i = docLen; i >= index; i--) {
-                    document[line][i + wordLen] = document[line][i];
-                }
-
-                for (int i = 0; i < wordLen; i++) {
-                    document[line][index + i] = result[i];
-                }
-
-                printf("%s",document[line]);
-                printf("\n");
-                repeat=1;
-                free(documentTemplate);
-                continue;
            case '7': {
                 printf("Command 7 is to search\n\n");
 
@@ -261,12 +201,12 @@ int main(void){
                u_int32_t HowManyMatching=0;
 
                 for (int i = 1; i <= currentLine; i++) {
-                    for (int j = 0; j < strlen(document[i]); j++) {
+                    for (int j = 0; j <= strlen(document[i]); j++) {
                         if (document[i][j]==' ' || document[i][j]=='\0') {
                             if (match==strlen(results)) {
                                 u_int32_t* pairofresult = malloc(sizeof(u_int32_t) * 2);
-                                pairofresult[0] = i; // Line
-                                pairofresult[1] = j-strlen(results); // Index
+                                pairofresult[0] = i;
+                                pairofresult[1] = j-strlen(results);
                                 arrayformatching[HowManyMatching]=pairofresult;
                                 HowManyMatching++;
                             }
@@ -281,20 +221,24 @@ int main(void){
                         }
                     }
                 }
-               printf("result: ");
-               for (int i = 0; i < HowManyMatching; i++) {
-                   printf("%d ",arrayformatching[i][0]);
-                   printf("%d",arrayformatching[i][1]);
-                   printf("\n");
+               if (!HowManyMatching) {
+                   printf("Not Found");
+               }else {
+                   printf("result: ");
+
+                   for (int i = 0; i < HowManyMatching; i++) {
+                       printf("%d ",arrayformatching[i][0]);
+                       printf("%d",arrayformatching[i][1]);
+                       printf("\n");
+                   }
                }
-               // printf("%p",arrayformatching);
+
 
                 printf("\n\n");
                 repeat = 1;
                free(documentTemplates);
                free(arrayformatching);
                 continue;
-
             }
             case '8':
                 printf("Thanks bye");
@@ -303,7 +247,6 @@ int main(void){
             default:
                 printf("You wrote incorrect number\n");
                 printf("write again\n\n");
-
                 repeat=1;
         }
     }
@@ -311,7 +254,6 @@ int main(void){
     for (int32_t i = 1; i < currentLine; i++) {
         free(document[i]);
     }
-    // free(document);
     return 0;
 }
 
